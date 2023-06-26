@@ -3,7 +3,7 @@ name: CI
 on: push
 
 env:
-  BINARY_NAME: example
+  BINARY_NAME: dns-server
 
 jobs:
   build:
