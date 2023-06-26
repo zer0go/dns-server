@@ -4,6 +4,7 @@ on: push
 
 env:
   BINARY_NAME: dns-server
+  GO_VERSION: 1.20.5
 
 jobs:
   build:
@@ -16,7 +17,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.20.5
+          go-version: ${{ env.GO_VERSION }}
       - name: Install dependencies
         run: make install
       - name: Run lint check
@@ -26,7 +27,7 @@ jobs:
       - name: Create artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${BINARY_NAME}-binaries
+          name: ${{ env.BINARY_NAME }}-binaries
           path: build/
 
   release:
@@ -39,7 +40,7 @@ jobs:
       - name: Download binaries artifact
         uses: actions/download-artifact@v3
         with:
-          name: ${BINARY_NAME}-binaries
+          name: ${{ env.BINARY_NAME }}-binaries
           path: build/
       - name: Uploaded binaries as release assets
         run: |

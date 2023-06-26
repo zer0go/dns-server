@@ -18,4 +18,4 @@ $ dig -p 15353 example.local.dns.com
 - `RECORDS_JSON` (records json contents)
 - `RECORDS_JSON_FILE` (records json file)
 - `BASE_DOMAIN`
-- `PORT` (Default: 15353)
+- `ADDR` (Default: 0.0.0.0:15353)

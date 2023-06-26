@@ -13,7 +13,7 @@ import (
 )
 
 var Version = "development"
-var DefaultPort = 15353
+var DefaultAddr = "0.0.0.0:15353"
 
 func main() {
 	config := config.NewAppConfig()
@@ -35,11 +35,10 @@ func main() {
 	}
 	dns.HandleFunc(baseDomain + ".", dnsHandler.Handle)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = strconv.Itoa(DefaultPort)
+	addr := os.Getenv("ADDR")
+	if addr == "" {
+		addr = DefaultAddr
 	}
-	addr := "0.0.0.0:" + port
 	server := &dns.Server{
 		Addr: addr,
 		Net:  "udp",
