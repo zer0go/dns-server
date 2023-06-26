@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/miekg/dns"
 	"github.com/zer0go/dns-server/internal/config"
