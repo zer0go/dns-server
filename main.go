@@ -12,7 +12,7 @@ import (
 )
 
 var Version = "development"
-var DefaultAddr = "0.0.0.0:15353"
+var DefaultAddr = "0.0.0.0:5353"
 
 func main() {
 	config := config.NewAppConfig()
