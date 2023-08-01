@@ -11,20 +11,16 @@ import (
 	"github.com/zer0go/dns-server/internal/question"
 )
 
-var Version = "development"
-var DefaultAddr = "0.0.0.0:5353"
+var (
+	Version = "development"
+	DefaultAddr = "0.0.0.0:5353"
+)
 
 func main() {
 	config := config.NewAppConfig()
-	recordsJSON := os.Getenv("RECORDS_JSON")
-	if recordsJSON != "" {
-		config.LoadFromJSON([]byte(recordsJSON))
-	}
-	recordsJSONFile := os.Getenv("RECORDS_JSON_FILE")
-	if recordsJSONFile != "" {
-		config.LoadFromFile(recordsJSONFile)
-	}
+	config.InitialLoadFromEnv()
 
+	reloadConfig := os.Getenv("RELOAD_CONFIG") == "1"
 	baseDomain := os.Getenv("BASE_DOMAIN")
 	dnsHandler := handler.DNSHandler{
 		Parser: question.Parser{
@@ -32,7 +28,12 @@ func main() {
 			Records: config.Records,
 		},
 	}
-	dns.HandleFunc(baseDomain + ".", dnsHandler.Handle)
+	dns.HandleFunc(baseDomain + ".", func (w dns.ResponseWriter, r *dns.Msg) {
+		if reloadConfig {
+			config.InitialLoadFromEnv();
+		}
+		dnsHandler.Handle(w, r)
+	})
 
 	addr := os.Getenv("ADDR")
 	if addr == "" {
@@ -42,7 +43,8 @@ func main() {
 		Addr: addr,
 		Net:  "udp",
 	}
-	fmt.Printf("DNS Server %s | starting at udp://%s | base domain '%s' \n", Version, addr, baseDomain)
+	fmt.Printf("DNS Server %s | starting at udp://%s | base domain '%s' | reload config '%t' \n", Version, addr, baseDomain, reloadConfig)
+
 	err := server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {

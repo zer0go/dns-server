@@ -3,7 +3,6 @@ package question
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/miekg/dns"
 )
@@ -21,8 +20,8 @@ func (p *Parser) Parse(questions []dns.Question) (dns.RR, error) {
 	for _, q := range questions {
 		switch q.Qtype {
 		case dns.TypeA:
-			trimmedName := strings.TrimRight(q.Name, baseDomain)
-			log.Printf("Query for %s\n", q.Name)
+			trimmedName := q.Name[:len(q.Name)-len(baseDomain)]
+			log.Printf("Query for %s -> %s\n", q.Name, trimmedName)
 
 			ip := p.Records[trimmedName]
 			if ip == "" {

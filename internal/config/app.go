@@ -16,6 +16,20 @@ func NewAppConfig() *AppConfig {
 	}
 }
 
+func (c *AppConfig) InitialLoadFromEnv() {
+	c.Records = make(map[string]string)
+
+	recordsJSON := os.Getenv("RECORDS_JSON")
+	if recordsJSON != "" {
+		c.LoadFromJSON([]byte(recordsJSON))
+	}
+
+	recordsJSONFile := os.Getenv("RECORDS_JSON_FILE")
+	if recordsJSONFile != "" {
+		c.LoadFromFile(recordsJSONFile)
+	}
+}
+
 func (c *AppConfig) LoadFromJSON(b []byte) {
 	r := make(map[string]string)
 	_ = json.Unmarshal(b, &r)
