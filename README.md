@@ -9,9 +9,9 @@ $ make install
 ```shell
 $ export RECORDS_JSON='{"example.local":"1.2.3.4"}'
 $ make run
-$ dig -p 15353 example.local
+$ dig -p 5353 example.local # example.local.          3600 IN A 1.2.3.4
 $ BASE_DOMAIN=dns.com make run
-$ dig -p 15353 example.local.dns.com
+$ dig -p 5353 example.local.dns.com # example.local.dns.com. 3600 IN A 1.2.3.4
 ```
 
 ## Available env vars
