@@ -23,6 +23,6 @@ COPY --from=base /build/app /usr/local/bin/app
 USER app
 
 ENV TZ="Europe/Budapest"
-EXPOSE 5353
+EXPOSE 5353/udp
 
 ENTRYPOINT ["app"]
