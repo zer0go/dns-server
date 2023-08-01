@@ -8,11 +8,11 @@ import (
 	"github.com/miekg/dns"
 	"github.com/zer0go/dns-server/internal/config"
 	"github.com/zer0go/dns-server/internal/handler"
-	"github.com/zer0go/dns-server/internal/question"
+	"github.com/zer0go/dns-server/internal/parser"
 )
 
 var (
-	Version = "development"
+	Version     = "development"
 	DefaultAddr = "0.0.0.0:5353"
 )
 
@@ -23,14 +23,16 @@ func main() {
 	reloadConfig := os.Getenv("RELOAD_CONFIG") == "1"
 	baseDomain := os.Getenv("BASE_DOMAIN")
 	dnsHandler := handler.DNSHandler{
-		Parser: question.Parser{
+		Parser: parser.QuestionParser{
 			BaseDomain: baseDomain,
-			Records: config.Records,
+			Records:    config.Records,
+			SOADomain:  os.Getenv("SOA_DOMAIN"),
+			SOAMailBox: os.Getenv("SOA_MAILBOX"),
 		},
 	}
-	dns.HandleFunc(baseDomain + ".", func (w dns.ResponseWriter, r *dns.Msg) {
+	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
 		if reloadConfig {
-			config.InitialLoadFromEnv();
+			config.InitialLoadFromEnv()
 		}
 		dnsHandler.Handle(w, r)
 	})
@@ -43,7 +45,13 @@ func main() {
 		Addr: addr,
 		Net:  "udp",
 	}
-	fmt.Printf("DNS Server %s | starting at udp://%s | base domain '%s' | reload config '%t' \n", Version, addr, baseDomain, reloadConfig)
+	fmt.Printf(
+		"DNS Server %s | starting at udp://%s | base domain '%s' | reload config '%t' \n",
+		Version,
+		addr,
+		baseDomain,
+		reloadConfig,
+	)
 
 	err := server.ListenAndServe()
 	defer server.Shutdown()

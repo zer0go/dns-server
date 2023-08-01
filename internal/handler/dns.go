@@ -4,11 +4,11 @@ import (
 	"log"
 
 	"github.com/miekg/dns"
-	"github.com/zer0go/dns-server/internal/question"
+	"github.com/zer0go/dns-server/internal/parser"
 )
 
 type DNSHandler struct {
-	Parser question.Parser
+	Parser parser.QuestionParser
 }
 
 func (h *DNSHandler) Handle(w dns.ResponseWriter, r *dns.Msg) {
