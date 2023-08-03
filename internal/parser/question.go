@@ -2,6 +2,7 @@ package parser
 
 import (
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,15 +40,16 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 					mailBox := r.GetMailBox()
 					log.Info().Msgf("Founded record: [SOA] %s (Ns: %s, Mbox: %s)", r.Name, r.NameServer, mailBox)
 
+					serial, _ := strconv.Atoi(time.Now().Format("20060102") + "00")
 					result := new(dns.SOA)
 					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: r.GetTTL()}
 					result.Ns = r.GetNameServer()
 					result.Mbox = mailBox
-					result.Serial = uint32(time.Now().Unix())
-					result.Refresh = uint32(60)
-					result.Retry = uint32(60)
-					result.Expire = uint32(60)
-					result.Minttl = uint32(60)
+					result.Serial = uint32(serial)
+					result.Refresh = uint32(3600)
+					result.Retry = uint32(1800)
+					result.Expire = uint32(2592000)
+					result.Minttl = uint32(3600)
 
 					return result, nil
 				}
