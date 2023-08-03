@@ -18,34 +18,52 @@ type QuestionParser struct {
 
 func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 	for _, q := range questions {
-		name := simplifyName(q.Name)
-		log.Info().Msgf("Question: %s -> %s", q.String(), name)
+		simplifiedName := simplifyName(q.Name)
+		log.Info().
+			Str("query_name", q.Name).
+			Str("simplified_name", simplifiedName).
+			Str("type", dns.Type(q.Qtype).String()).
+			Msgf("Incoming question: '%s'", q.String())
 
 		switch q.Qtype {
 		case dns.TypeA:
-			log.Info().Msgf("Query for [A] %s", name)
 			for _, r := range p.RecordsA {
-				if r.Name == name {
-					log.Info().Msgf("Founded record: [A] %s -> %s", r.Name, r.IP)
+				if r.Name == simplifiedName {
+					name := r.GetName()
+					log.Info().
+						Str("name", name).
+						Str("type", dns.Type(q.Qtype).String()).
+						Str("ip", r.IP).
+						Msgf("Founded record: %s", r.Name)
 
 					result := new(dns.A)
-					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: r.GetTTL()}
+					result.Hdr = dns.RR_Header{Name: name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: r.GetTTL()}
 					result.A = net.ParseIP(r.IP)
 
 					return result, nil
 				}
 			}
 		case dns.TypeSOA:
-			log.Info().Msgf("Query for [SOA] %s", name)
 			for _, r := range p.RecordsSOA {
-				if r.Name == name {
+				if r.Name == simplifiedName {
+					name := r.GetName()
+					nameServer := r.GetNameServer()
 					mailBox := r.GetMailBox()
-					log.Info().Msgf("Founded record: [SOA] %s (Ns: %s, Mbox: %s)", r.Name, r.NameServer, mailBox)
-
+					ttl := r.GetTTL()
 					serial, _ := strconv.Atoi(time.Now().Format("20060102") + "00")
+					log.Info().
+						Str("name", name).
+						Str("type", dns.Type(q.Qtype).String()).
+						Str("name_server", nameServer).
+						Str("email", r.Email).
+						Str("mailBox", mailBox).
+						Uint32("ttl", ttl).
+						Int("serial", serial).
+						Msgf("Founded record: %s", r.Name)
+
 					result := new(dns.SOA)
-					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: r.GetTTL()}
-					result.Ns = r.GetNameServer()
+					result.Hdr = dns.RR_Header{Name: name, Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: ttl}
+					result.Ns = nameServer
 					result.Mbox = mailBox
 					result.Serial = uint32(serial)
 					result.Refresh = uint32(3600)
