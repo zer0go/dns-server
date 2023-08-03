@@ -18,12 +18,12 @@ type QuestionParser struct {
 
 func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 	for _, q := range questions {
-		log.Info().Msgf("Question: %s", q.String())
-
 		name := simplifyName(q.Name)
+		log.Info().Msgf("Question: %s -> %s", q.String(), name)
+
 		switch q.Qtype {
 		case dns.TypeA:
-			log.Info().Msgf("Query for [A] %s", q.Name)
+			log.Info().Msgf("Query for [A] %s", name)
 			for _, r := range p.RecordsA {
 				if r.Name == name {
 					log.Info().Msgf("Founded record: [A] %s -> %s", r.Name, r.IP)
@@ -36,7 +36,7 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 				}
 			}
 		case dns.TypeSOA:
-			log.Info().Msgf("Query for [SOA] %s", q.Name)
+			log.Info().Msgf("Query for [SOA] %s", name)
 			for _, r := range p.RecordsSOA {
 				if r.Name == name {
 					mailBox := r.GetMailBox()
