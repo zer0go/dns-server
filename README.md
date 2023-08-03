@@ -21,3 +21,4 @@ $ dig -p 5353 SEO example.com # example.com. 7200 IN SOA ns1.example.com. email.
 - `CONFIG_JSON` (conf json contents)
 - `CONFIG_JSON_FILE` (config json file)
 - `ADDR` (Default: 0.0.0.0:5353)
+- `LOG_FORMAT` (available formats: json)
