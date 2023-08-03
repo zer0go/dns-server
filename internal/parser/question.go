@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"fmt"
+	"net"
 	"strings"
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/zer0go/dns-server/internal/record"
 	"github.com/rs/zerolog/log"
+	"github.com/zer0go/dns-server/internal/record"
 )
 
 type QuestionParser struct {
@@ -25,7 +25,11 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 				if r.Name == name {
 					log.Info().Msgf("Founded record: [A] %s -> %s", r.Name, r.IP)
 
-					return dns.NewRR(fmt.Sprintf("%s A %s", r.GetName(), r.IP))
+					result := new(dns.A)
+					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: r.GetTTL()}
+					result.A = net.ParseIP(r.IP)
+
+					return result, nil
 				}
 			}
 		case dns.TypeSOA:
@@ -36,7 +40,7 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 					log.Info().Msgf("Founded record: [SOA] %s (Ns: %s, Mbox: %s)", r.Name, r.NameServer, mailBox)
 
 					result := new(dns.SOA)
-					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: 0}
+					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: r.GetTTL()}
 					result.Ns = r.GetNameServer()
 					result.Mbox = mailBox
 					result.Serial = uint32(time.Now().Unix())

@@ -20,10 +20,9 @@ var (
 func main() {
 	var verbose bool
 	flag.BoolVar(&verbose, "v", false, "verbose output")
-    flag.Parse()
+	flag.Parse()
 
-	c := config.NewAppConfig()
-	c.InitialLoadFromEnv()
+	c := config.NewAppConfigFromEnv()
 	config.ConfigureLogger(verbose)
 
 	log.Debug().

@@ -1,0 +1,29 @@
+{
+    "records": {
+        "A": [
+            {
+                "name": "example.com",
+                "ip": "0.0.0.0",
+                "ttl": 1800
+            }
+        ],
+        "SOA": [
+            {
+                "name": "example.com",
+                "nameserver": "ns1.example.com",
+                "email": "email@address.com",
+                "ttl": 7200
+            }
+        ]
+    },
+    "domain_records": [
+        {
+            "domain": "example.com",
+            "ttl": 3600,
+            "hosts": {
+                "a": "10.10.10.10",
+                "b": "20.20.20.20"
+            }
+        }
+    ]
+}

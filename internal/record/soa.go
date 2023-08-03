@@ -6,6 +6,7 @@ type SOARecord struct {
 	Name       string `json:"name"`
 	NameServer string `json:"nameserver"`
 	Email      string `json:"email"`
+	TTL        int    `json:"ttl"`
 }
 
 func (r *SOARecord) GetName() string {
@@ -18,4 +19,8 @@ func (r *SOARecord) GetNameServer() string {
 
 func (r *SOARecord) GetMailBox() string {
 	return strings.ReplaceAll(r.Email, "@", ".") + "."
+}
+
+func (r *SOARecord) GetTTL() uint32 {
+	return uint32(r.TTL)
 }

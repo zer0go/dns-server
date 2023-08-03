@@ -20,6 +20,7 @@ type RecordsConfig struct {
 
 type DomainRecordsConfig struct {
 	Domain string            `json:"domain"`
+	TTL    int               `json:"ttl"`
 	Hosts  map[string]string `json:"hosts"`
 }
 
@@ -29,30 +30,17 @@ type AppConfig struct {
 }
 
 func NewAppConfig() *AppConfig {
-	return &AppConfig{}
-}
-
-func (c *AppConfig) GetARecords() []record.ARecord {
-	records := c.Records.A
-
-	for _, r := range c.DomainRecords {
-		for hostName, ip := range r.Hosts {
-			records = append(records, record.ARecord{
-				Name: hostName + "." + r.Domain,
-				IP:   ip,
-			})
-		}
+	return &AppConfig{
+		Records: RecordsConfig{
+			A:   []record.ARecord{},
+			SOA: []record.SOARecord{},
+		},
+		DomainRecords: []DomainRecordsConfig{},
 	}
-
-	return records
 }
 
-func (c *AppConfig) GetSOARecords() []record.SOARecord {
-	return c.Records.SOA
-}
-
-func (c *AppConfig) InitialLoadFromEnv() {
-	c.Records = RecordsConfig{}
+func NewAppConfigFromEnv() *AppConfig {
+	c := NewAppConfig()
 
 	configJSON := os.Getenv("CONFIG_JSON")
 	if configJSON != "" {
@@ -63,19 +51,53 @@ func (c *AppConfig) InitialLoadFromEnv() {
 	if configJSONFile != "" {
 		c.LoadFromFile(configJSONFile)
 	}
+
+	return c
 }
 
 func (c *AppConfig) LoadFromJSON(b []byte) {
-	_ = json.Unmarshal(b, &c)
+	loadedConfig := NewAppConfig()
+	err := json.Unmarshal(b, &loadedConfig)
+	if err != nil {
+		log.Error().Err(err).Msg("error loading from json")
+
+		return
+	}
+
+	c.Records.A = append(c.Records.A, loadedConfig.Records.A...)
+	c.Records.SOA = append(c.Records.SOA, loadedConfig.Records.SOA...)
+	c.DomainRecords = append(c.DomainRecords, loadedConfig.DomainRecords...)
 }
 
 func (c *AppConfig) LoadFromFile(f string) {
 	b, err := os.ReadFile(f)
 	if err != nil {
-		log.Print(err)
+		log.Error().Err(err).Msg("error loading from file")
+
+		return
 	}
 
 	c.LoadFromJSON(b)
+}
+
+func (c *AppConfig) GetARecords() []record.ARecord {
+	records := c.Records.A
+
+	for _, r := range c.DomainRecords {
+		for hostName, ip := range r.Hosts {
+			records = append(records, record.ARecord{
+				Name: hostName + "." + r.Domain,
+				IP:   ip,
+				TTL:  r.TTL,
+			})
+		}
+	}
+
+	return records
+}
+
+func (c *AppConfig) GetSOARecords() []record.SOARecord {
+	return c.Records.SOA
 }
 
 func ConfigureLogger(verbose bool) {
