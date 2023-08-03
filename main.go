@@ -1,11 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/miekg/dns"
+	"github.com/rs/zerolog/log"
 	"github.com/zer0go/dns-server/internal/config"
 	"github.com/zer0go/dns-server/internal/handler"
 	"github.com/zer0go/dns-server/internal/parser"
@@ -17,25 +18,25 @@ var (
 )
 
 func main() {
-	config := config.NewAppConfig()
-	config.InitialLoadFromEnv()
+	var verbose bool
+	flag.BoolVar(&verbose, "v", false, "verbose output")
+    flag.Parse()
 
-	reloadConfig := os.Getenv("RELOAD_CONFIG") == "1"
-	baseDomain := os.Getenv("BASE_DOMAIN")
+	c := config.NewAppConfig()
+	c.InitialLoadFromEnv()
+	config.ConfigureLogger(verbose)
+
+	log.Debug().
+		Interface("config", c).
+		Msg("configuration loaded")
+
 	dnsHandler := handler.DNSHandler{
 		Parser: parser.QuestionParser{
-			BaseDomain: baseDomain,
-			Records:    config.Records,
-			SOADomain:  os.Getenv("SOA_DOMAIN"),
-			SOAMailBox: os.Getenv("SOA_MAILBOX"),
+			RecordsA:   c.GetARecords(),
+			RecordsSOA: c.GetSOARecords(),
 		},
 	}
-	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
-		if reloadConfig {
-			config.InitialLoadFromEnv()
-		}
-		dnsHandler.Handle(w, r)
-	})
+	dns.HandleFunc(".", dnsHandler.Handle)
 
 	addr := os.Getenv("ADDR")
 	if addr == "" {
@@ -46,16 +47,14 @@ func main() {
 		Net:  "udp",
 	}
 	fmt.Printf(
-		"DNS Server %s | starting at udp://%s | base domain '%s' | reload config '%t' \n",
+		"DNS Server %s | starting at udp://%s\n",
 		Version,
 		addr,
-		baseDomain,
-		reloadConfig,
 	)
 
 	err := server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {
-		log.Fatalf("Failed to start server: %s\n ", err.Error())
+		log.Error().Msgf("Failed to start server: %s\n ", err.Error())
 	}
 }

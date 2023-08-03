@@ -2,53 +2,53 @@ package parser
 
 import (
 	"fmt"
-	"log"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
+	"github.com/zer0go/dns-server/internal/record"
+	"github.com/rs/zerolog/log"
 )
 
 type QuestionParser struct {
-	BaseDomain string
-	Records    map[string]string
-	SOADomain  string
-	SOAMailBox string
+	RecordsA   []record.ARecord
+	RecordsSOA []record.SOARecord
 }
 
 func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
-	baseDomain := "."
-	if p.BaseDomain != "" {
-		baseDomain += p.BaseDomain + "."
-	}
 	for _, q := range questions {
+		name := strings.TrimSuffix(q.Name, ".")
 		switch q.Qtype {
 		case dns.TypeA:
-			trimmedName := strings.TrimSuffix(q.Name, baseDomain)
-			log.Printf("Query for %s -> %s\n", q.Name, trimmedName)
+			log.Info().Msgf("Query for [A] %s", q.Name)
+			for _, r := range p.RecordsA {
+				if r.Name == name {
+					log.Info().Msgf("Founded record: [A] %s -> %s", r.Name, r.IP)
 
-			ip := p.Records[trimmedName]
-			if ip == "" {
-				break
+					return dns.NewRR(fmt.Sprintf("%s A %s", r.GetName(), r.IP))
+				}
 			}
-
-			log.Printf("Founded record: %s -> %s\n", trimmedName, ip)
-
-			return dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
 		case dns.TypeSOA:
-			record := new(dns.SOA)
-			record.Hdr = dns.RR_Header{Name: p.SOADomain + ".", Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: 0}
-			record.Ns = q.Name
-			record.Mbox = p.SOAMailBox + "."
-			record.Serial = uint32(time.Now().Unix())
-			record.Refresh = uint32(60)
-			record.Retry = uint32(60)
-			record.Expire = uint32(60)
-			record.Minttl = uint32(60)
+			log.Info().Msgf("Query for [SOA] %s", q.Name)
+			for _, r := range p.RecordsSOA {
+				if r.Name == name {
+					mailBox := r.GetMailBox()
+					log.Info().Msgf("Founded record: [SOA] %s (Ns: %s, Mbox: %s)", r.Name, r.NameServer, mailBox)
 
-			return record, nil
+					result := new(dns.SOA)
+					result.Hdr = dns.RR_Header{Name: r.GetName(), Rrtype: dns.TypeSOA, Class: dns.ClassINET, Ttl: 0}
+					result.Ns = r.GetNameServer()
+					result.Mbox = mailBox
+					result.Serial = uint32(time.Now().Unix())
+					result.Refresh = uint32(60)
+					result.Retry = uint32(60)
+					result.Expire = uint32(60)
+					result.Minttl = uint32(60)
+
+					return result, nil
+				}
+			}
 		}
-
 	}
 
 	return nil, nil
