@@ -18,7 +18,9 @@ type QuestionParser struct {
 
 func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 	for _, q := range questions {
-		name := strings.TrimSuffix(q.Name, ".")
+		log.Info().Msgf("Question: %s", q.String())
+
+		name := simplifyName(q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
 			log.Info().Msgf("Query for [A] %s", q.Name)
@@ -58,4 +60,8 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 	}
 
 	return nil, nil
+}
+
+func simplifyName(name string) string {
+	return strings.TrimSuffix(strings.ToLower(name), ".")
 }
