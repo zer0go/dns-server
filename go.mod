@@ -2,7 +2,10 @@ module github.com/zer0go/dns-server
 
 go 1.20
 
-require github.com/miekg/dns v1.1.55
+require (
+	github.com/caarlos0/env/v9 v9.0.0
+	github.com/miekg/dns v1.1.55
+)
 
 require (
 	github.com/mattn/go-colorable v0.1.12 // indirect

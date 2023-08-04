@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
 	"github.com/zer0go/dns-server/internal/record"
+	"github.com/caarlos0/env/v9"
 )
 
 type RecordsConfig struct {
@@ -25,6 +27,10 @@ type DomainRecordsConfig struct {
 }
 
 type AppConfig struct {
+  Addr          string `env:"ADDR" envDefault:"0.0.0.0:5353"`
+	LogFormat     string `env:"LOG_FORMAT"`
+  ConfigJSON    string `env:"CONFIG_JSON"`
+  ConfigFile    string `env:"CONFIG_FILE"`
 	Records       RecordsConfig         `json:"records"`
 	DomainRecords []DomainRecordsConfig `json:"domain_records"`
 }
@@ -41,15 +47,17 @@ func NewAppConfig() *AppConfig {
 
 func NewAppConfigFromEnv() *AppConfig {
 	c := NewAppConfig()
-
-	configJSON := os.Getenv("CONFIG_JSON")
-	if configJSON != "" {
-		c.LoadFromJSON([]byte(configJSON))
+  if err := env.Parse(c); err != nil {
+		fmt.Printf("env parse error: %+v\n", err)
+		return nil
 	}
 
-	configJSONFile := os.Getenv("CONFIG_JSON_FILE")
-	if configJSONFile != "" {
-		c.LoadFromFile(configJSONFile)
+	if c.ConfigJSON != "" {
+		c.LoadFromJSON([]byte(c.ConfigJSON))
+	}
+
+	if c.ConfigFile != "" {
+		c.LoadFromFile(c.ConfigFile)
 	}
 
 	return c
@@ -100,7 +108,7 @@ func (c *AppConfig) GetSOARecords() []record.SOARecord {
 	return c.Records.SOA
 }
 
-func ConfigureLogger(verbose bool) {
+func (c *AppConfig) ConfigureLogger(verbose bool) {
 	if verbose {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	} else {
@@ -122,7 +130,7 @@ func ConfigureLogger(verbose bool) {
 		Caller().
 		Logger()
 
-	if os.Getenv("LOG_FORMAT") != "json" {
+	if c.LogFormat != "json" {
 		log.Logger = log.Logger.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: zerolog.TimeFieldFormat})
 	}
 }

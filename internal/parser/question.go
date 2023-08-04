@@ -16,7 +16,7 @@ type QuestionParser struct {
 	RecordsSOA []record.SOARecord
 }
 
-func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
+func (p *QuestionParser) Parse(questions []dns.Question) (rrs []dns.RR, err error) {
 	for _, q := range questions {
 		simplifiedName := simplifyName(q.Name)
 		log.Info().
@@ -40,7 +40,7 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 					result.Hdr = dns.RR_Header{Name: name, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: r.GetTTL()}
 					result.A = net.ParseIP(r.IP)
 
-					return result, nil
+					rrs = append(rrs, result)
 				}
 			}
 		case dns.TypeSOA:
@@ -71,13 +71,13 @@ func (p *QuestionParser) Parse(questions []dns.Question) (dns.RR, error) {
 					result.Expire = uint32(2592000)
 					result.Minttl = uint32(3600)
 
-					return result, nil
+					rrs = append(rrs, result)
 				}
 			}
 		}
 	}
-
-	return nil, nil
+	
+	return
 }
 
 func simplifyName(name string) string {

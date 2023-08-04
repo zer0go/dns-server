@@ -22,11 +22,11 @@ func (h *DNSHandler) Handle(w dns.ResponseWriter, r *dns.Msg) {
 			log.Error().Msgf("Parse error: %s\n", err.Error())
 			break
 		}
-		if rr == nil {
+		if len(rr) == 0 {
 			break
 		}
 
-		m.Answer = append(m.Answer, rr)
+		m.Answer = append(m.Answer, rr...)
 	}
 
 	w.WriteMsg(m)

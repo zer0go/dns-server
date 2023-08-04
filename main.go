@@ -3,18 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
+	//"time"
 
 	"github.com/miekg/dns"
 	"github.com/rs/zerolog/log"
 	"github.com/zer0go/dns-server/internal/config"
 	"github.com/zer0go/dns-server/internal/handler"
 	"github.com/zer0go/dns-server/internal/parser"
+	//"github.com/zer0go/dns-server/internal/record"
 )
 
 var (
 	Version     = "development"
-	DefaultAddr = "0.0.0.0:5353"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	c := config.NewAppConfigFromEnv()
-	config.ConfigureLogger(verbose)
+	c.ConfigureLogger(verbose)
 
 	log.Debug().
 		Interface("config", c).
@@ -35,25 +35,39 @@ func main() {
 			RecordsSOA: c.GetSOARecords(),
 		},
 	}
+	
+// 	go func() {
+//     for {
+//       time.Sleep(10 * time.Second)
+      
+//       dnsHandler = handler.DNSHandler{
+//     		Parser: parser.QuestionParser{
+//     			RecordsA:   []record.ARecord{},
+//     			RecordsSOA: []record.SOARecord{},
+//     		},
+//     	}
+      
+//       log.Debug().
+// 		    Interface("config", c).
+// 		    Msg("configuration updated")
+//     }
+//   }()
+  
 	dns.HandleFunc(".", dnsHandler.Handle)
-
-	addr := os.Getenv("ADDR")
-	if addr == "" {
-		addr = DefaultAddr
-	}
+	
 	server := &dns.Server{
-		Addr: addr,
+		Addr: c.Addr,
 		Net:  "udp",
 	}
 	fmt.Printf(
 		"DNS Server %s | starting at udp://%s\n",
 		Version,
-		addr,
+		c.Addr,
 	)
 
 	err := server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {
-		log.Error().Msgf("Failed to start server: %s\n ", err.Error())
+		log.Error().Err(err).Msgf("failed to start server")
 	}
 }
