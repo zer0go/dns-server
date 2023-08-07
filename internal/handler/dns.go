@@ -2,12 +2,12 @@ package handler
 
 import (
 	"github.com/miekg/dns"
-	"github.com/zer0go/dns-server/internal/parser"
 	"github.com/rs/zerolog/log"
+	"github.com/zer0go/dns-server/internal/question"
 )
 
 type DNSHandler struct {
-	Parser parser.QuestionParser
+	Resolver *question.Resolver
 }
 
 func (h *DNSHandler) Handle(w dns.ResponseWriter, r *dns.Msg) {
@@ -17,7 +17,7 @@ func (h *DNSHandler) Handle(w dns.ResponseWriter, r *dns.Msg) {
 
 	switch r.Opcode {
 	case dns.OpcodeQuery:
-		rr, err := h.Parser.Parse(m.Question)
+		rr, err := h.Resolver.Resolve(m.Question)
 		if err != nil {
 			log.Error().Msgf("Parse error: %s\n", err.Error())
 			break

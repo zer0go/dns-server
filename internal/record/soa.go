@@ -2,25 +2,25 @@ package record
 
 import "strings"
 
-type SOARecord struct {
+type SOA struct {
 	Name       string `json:"name"`
 	NameServer string `json:"nameserver"`
 	Email      string `json:"email"`
 	TTL        int    `json:"ttl"`
 }
 
-func (r *SOARecord) GetName() string {
+func (r *SOA) GetName() string {
 	return r.Name + "."
 }
 
-func (r *SOARecord) GetNameServer() string {
+func (r *SOA) GetNameServer() string {
 	return r.NameServer + "."
 }
 
-func (r *SOARecord) GetMailBox() string {
+func (r *SOA) GetMailBox() string {
 	return strings.ReplaceAll(r.Email, "@", ".") + "."
 }
 
-func (r *SOARecord) GetTTL() uint32 {
+func (r *SOA) GetTTL() uint32 {
 	return uint32(r.TTL)
 }

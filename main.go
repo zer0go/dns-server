@@ -3,19 +3,44 @@ package main
 import (
 	"flag"
 	"fmt"
-	//"time"
+	"time"
 
 	"github.com/miekg/dns"
 	"github.com/rs/zerolog/log"
 	"github.com/zer0go/dns-server/internal/config"
 	"github.com/zer0go/dns-server/internal/handler"
-	"github.com/zer0go/dns-server/internal/parser"
-	//"github.com/zer0go/dns-server/internal/record"
+	"github.com/zer0go/dns-server/internal/question"
+	"github.com/zer0go/dns-server/internal/record"
 )
 
 var (
-	Version     = "development"
+	Version = "development"
 )
+
+func reloadRecords(ds *record.DataSource, i int) {
+	if i == 0 {
+		return
+	}
+
+	for {
+		time.Sleep(time.Duration(i) * time.Second)
+
+		lastModified := ds.GetLastModified()
+		lastLoaded := ds.GetLastLoaded()
+
+		if lastModified.Before(lastLoaded) {
+			continue
+		}
+
+		ds.Load()
+
+		log.Debug().
+			Interface("last_loaded", lastLoaded).
+			Interface("last_modified", lastModified).
+			Interface("records", ds.GetRecords()).
+			Msg("records updated")
+	}
+}
 
 func main() {
 	var verbose bool
@@ -29,32 +54,22 @@ func main() {
 		Interface("config", c).
 		Msg("configuration loaded")
 
+	dataSource := record.NewDataSource(c.RecordsFile)
+	dataSource.Load()
+
+	log.Debug().
+		Interface("records", dataSource.GetRecords()).
+		Msg("records updated")
+
+	go reloadRecords(dataSource, c.ReloadRecordsInterval)
+
 	dnsHandler := handler.DNSHandler{
-		Parser: parser.QuestionParser{
-			RecordsA:   c.GetARecords(),
-			RecordsSOA: c.GetSOARecords(),
-		},
+		Resolver: question.NewResolver(
+			record.NewDAO(dataSource),
+		),
 	}
-	
-// 	go func() {
-//     for {
-//       time.Sleep(10 * time.Second)
-      
-//       dnsHandler = handler.DNSHandler{
-//     		Parser: parser.QuestionParser{
-//     			RecordsA:   []record.ARecord{},
-//     			RecordsSOA: []record.SOARecord{},
-//     		},
-//     	}
-      
-//       log.Debug().
-// 		    Interface("config", c).
-// 		    Msg("configuration updated")
-//     }
-//   }()
-  
 	dns.HandleFunc(".", dnsHandler.Handle)
-	
+
 	server := &dns.Server{
 		Addr: c.Addr,
 		Net:  "udp",
