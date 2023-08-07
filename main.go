@@ -59,7 +59,7 @@ func main() {
 
 	log.Debug().
 		Interface("records", dataSource.GetRecords()).
-		Msg("records updated")
+		Msg("records loaded")
 
 	go reloadRecords(dataSource, c.ReloadRecordsInterval)
 
